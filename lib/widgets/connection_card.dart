@@ -132,16 +132,23 @@ class ConnectionCard extends StatelessWidget {
               ),
             ],
             
-            // Botão de cancelar (apenas para conexões aguardando)
-            if (connection.status == ConnectionStatus.waiting) ...[
+            // Botão de cancelar (para conexões aguardando e conectadas)
+            if (connection.canBeCancelled) ...[
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: onCancel,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red, width: 2),
+                    foregroundColor: connection.status == ConnectionStatus.connected 
+                        ? Colors.orange 
+                        : Colors.red,
+                    side: BorderSide(
+                      color: connection.status == ConnectionStatus.connected 
+                          ? Colors.orange 
+                          : Colors.red,
+                      width: 2,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -150,10 +157,17 @@ class ConnectionCard extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.cancel, size: 20),
+                      Icon(
+                        connection.status == ConnectionStatus.connected 
+                            ? Icons.link_off 
+                            : Icons.cancel,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
-                        'Cancelar Conexão',
+                        connection.status == ConnectionStatus.connected 
+                            ? 'Desconectar Cliente'
+                            : 'Cancelar Conexão',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),

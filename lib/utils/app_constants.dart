@@ -25,6 +25,9 @@ class AppConstants {
   static const String connectionEstablished = 'Conexão estabelecida com sucesso!';
   static const String invalidPin = 'PIN inválido ou conexão não encontrada';
   static const String connectionCancelled = 'Conexão cancelada com sucesso!';
+  static const String clientDisconnected = 'Cliente desconectado com sucesso!';
+  static const String connectionNotActive = 'Conexão não está mais ativa';
+  static const String connectionCancelledByAdmin = 'Conexão foi cancelada pelo Admin';
   static const String connectionError = 'Erro ao criar conexão';
   static const String cancelError = 'Erro ao cancelar conexão';
   static const String connectError = 'Erro ao conectar';

@@ -113,4 +113,8 @@ class Connection {
         return 'Cancelado';
     }
   }
+
+  bool get canBeCancelled {
+    return status == ConnectionStatus.waiting || status == ConnectionStatus.connected;
+  }
 }

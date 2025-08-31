@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_constants.dart';
-import '../services/permission_service.dart';
 import '../services/connection_service.dart';
 import '../services/app_state_service.dart';
+import '../models/connection.dart';
 import '../widgets/gradient_button.dart';
 
 class ClientScreen extends StatefulWidget {
@@ -15,9 +15,7 @@ class ClientScreen extends StatefulWidget {
 
 class _ClientScreenState extends State<ClientScreen> {
   bool _isLoading = false;
-  bool _permissionsGranted = false;
   bool _isConnected = false;
-  String? _activeConnectionId;
   String? _activeConnectionPin;
   DateTime? _connectionDate;
   final TextEditingController _pinController = TextEditingController();
@@ -26,36 +24,153 @@ class _ClientScreenState extends State<ClientScreen> {
   @override
   void initState() {
     super.initState();
+    print('🚀 initState chamado');
+    print('🔍 _isLoading inicial: $_isLoading');
+    
+    // Garante que _isLoading seja false no início
+    setState(() {
+      _isLoading = false;
+    });
+    print('🔍 _isLoading após setState: $_isLoading');
+    
     _initializeClient();
+    
+    // Verifica o status da conexão periodicamente
+    _startConnectionStatusCheck();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print('🔄 didChangeDependencies chamado');
+    print('🔍 _isLoading em didChangeDependencies: $_isLoading');
+    
+    // Garante que _isLoading seja false quando a tela é focada
+    if (_isLoading) {
+      print('🔄 Resetando _isLoading em didChangeDependencies');
+      setState(() {
+        _isLoading = false;
+      });
+      print('🔍 _isLoading após reset: $_isLoading');
+    }
+  }
+
+  void _startConnectionStatusCheck() {
+    print('⏰ _startConnectionStatusCheck() chamado');
+    print('🔍 _isLoading em _startConnectionStatusCheck: $_isLoading');
+    // Verifica o status a cada 5 segundos
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted && _isConnected && _activeConnectionPin != null) {
+        print('⏰ Verificação periódica executada');
+        _checkConnectionStatus();
+        _startConnectionStatusCheck(); // Continua verificando
+      } else {
+        print('⏰ Verificação periódica parada: mounted=$mounted, _isConnected=$_isConnected, _activeConnectionPin=$_activeConnectionPin');
+      }
+    });
   }
 
   Future<void> _initializeClient() async {
+    print('🚀 _initializeClient() chamado');
+    print('🔍 _isLoading no início de _initializeClient: $_isLoading');
+    
     // Inicializa o ID do cliente
     final clientId = await AppStateService.getOrCreateClientId();
+    print('🔑 Client ID obtido: $clientId');
     setState(() {
       _clientId = clientId;
     });
+    print('🔍 _isLoading após setState do clientId: $_isLoading');
 
     // Verifica se há uma conexão ativa
     if (AppStateService.hasActiveConnection) {
+      print('🔗 Conexão ativa encontrada no AppState');
       final connectionData = AppStateService.activeConnectionData;
       if (connectionData != null) {
-        setState(() {
-          _isConnected = true;
-          _activeConnectionId = connectionData['id'];
-          _activeConnectionPin = connectionData['pin'];
-          _connectionDate = connectionData['date'];
-        });
+        print('🔗 Dados da conexão: $connectionData');
+        
+        // Verifica se a conexão ainda está ativa no Firestore antes de restaurar
+        try {
+          final snapshot = await ConnectionService.getConnectionByPinAnyStatus(connectionData['pin']);
+          if (snapshot != null && snapshot.status == ConnectionStatus.connected) {
+            setState(() {
+              _isConnected = true;
+              _activeConnectionPin = connectionData['pin'];
+              _connectionDate = connectionData['date'];
+            });
+            print('✅ Estado restaurado como conectado');
+          } else {
+            print('⚠️ Conexão no AppState não está mais ativa no Firestore');
+            await AppStateService.clearActiveConnection();
+            _clearScreenState();
+            print('✅ Estado limpo - conexão não está mais ativa');
+          }
+        } catch (e) {
+          print('❌ Erro ao verificar conexão no Firestore: $e');
+          // Em caso de erro, limpa o estado
+          await AppStateService.clearActiveConnection();
+          _clearScreenState();
+        }
       }
+    } else {
+      print('🔗 Nenhuma conexão ativa no AppState');
     }
 
-    // Verifica permissões
-    await _checkPermissions();
+    print('🔍 _isLoading no final de _initializeClient: $_isLoading');
+    print('✅ _initializeClient() concluído');
+  }
+
+  // Verifica se a conexão ainda está ativa no Firestore
+  Future<void> _checkConnectionStatus() async {
+    print('🔍 _checkConnectionStatus() chamado');
+    print('🔍 _isLoading em _checkConnectionStatus: $_isLoading');
+    if (_activeConnectionPin != null && _isConnected) {
+      print('🔍 Verificando conexão com PIN: $_activeConnectionPin');
+      try {
+        // Busca a conexão por PIN sem filtrar por status
+        final snapshot = await ConnectionService.getConnectionByPinAnyStatus(_activeConnectionPin!);
+        print('🔍 Status da conexão: ${snapshot?.statusText ?? "não encontrada"}');
+        
+        if (snapshot == null || snapshot.status != ConnectionStatus.connected) {
+          // Conexão foi cancelada, desconectada ou não existe mais
+          print('🔄 Status da conexão mudou: ${snapshot?.statusText ?? "não encontrada"}');
+          await AppStateService.clearActiveConnection();
+          _clearScreenState();
+          print('✅ Estado resetado para desconectado');
+          
+          // Mostra mensagem informativa para o usuário
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  snapshot?.status == ConnectionStatus.cancelled 
+                      ? AppConstants.connectionCancelledByAdmin
+                      : AppConstants.connectionNotActive
+                ),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        } else {
+          print('✅ Conexão ainda está ativa');
+        }
+      } catch (e) {
+        print('❌ Erro ao verificar status da conexão: $e');
+      }
+    } else {
+      print('🔍 Nenhum PIN ativo ou não está conectado para verificar');
+    }
   }
 
   @override
   void dispose() {
+    print('🧹 dispose chamado');
+    print('🔍 _isLoading em dispose: $_isLoading');
     _pinController.dispose();
+    // Limpa o estado ao sair da tela
+    _isLoading = false;
+    print('🔍 _isLoading após limpar em dispose: $_isLoading');
     super.dispose();
   }
 
@@ -87,8 +202,8 @@ class _ClientScreenState extends State<ClientScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 80,
-                        height: 80,
+                        width: 100,
+                        height: 100,
                         decoration: BoxDecoration(
                           color: AppTheme.accentColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
@@ -99,14 +214,14 @@ class _ClientScreenState extends State<ClientScreen> {
                         ),
                         child: Icon(
                           Icons.person,
-                          size: 40,
+                          size: 50,
                           color: AppTheme.accentColor,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
                       Text(
                         AppConstants.clientAreaTitle,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
                           color: AppTheme.textPrimary,
                           fontWeight: FontWeight.bold,
                         ),
@@ -114,9 +229,9 @@ class _ClientScreenState extends State<ClientScreen> {
                       const SizedBox(height: 8),
                       Text(
                         AppConstants.clientSubtitle,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: AppTheme.textSecondary,
-                          fontSize: 14,
+                          fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -124,17 +239,7 @@ class _ClientScreenState extends State<ClientScreen> {
                   ),
                 ),
 
-                // Botão de Permissões
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  child: GradientButton(
-                    text: _permissionsGranted ? AppConstants.permissionsActive : 'Ativar Permissões',
-                    onPressed: _permissionsGranted ? () {} : () => _requestPermissions(),
-                    icon: _permissionsGranted ? Icons.check_circle : Icons.notifications_active,
-                    width: double.infinity,
-                    isOutlined: _permissionsGranted,
-                  ),
-                ),
+
 
                 // Campo de PIN ou Card de Conexão Ativa
                 if (!_isConnected) ...[
@@ -188,18 +293,40 @@ class _ClientScreenState extends State<ClientScreen> {
                     ),
                   ),
 
-                  // Botão Conectar
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: GradientButton(
-                      text: 'Conectar',
-                      onPressed: _isLoading || _pinController.text.length != 4 
-                          ? () {} 
-                          : () => _connectToAdmin(),
-                      icon: Icons.link,
-                      width: double.infinity,
-                    ),
-                  ),
+                                     // Botão Conectar
+                   Padding(
+                     padding: const EdgeInsets.only(bottom: 24),
+                     child: GradientButton(
+                       text: _isLoading ? 'Conectando...' : 'Conectar',
+                       onPressed: () {
+                         print('🚀 Botão Conectar clicado!');
+                         print('🔍 PIN no controller: "${_pinController.text}"');
+                         print('🔍 PIN length: ${_pinController.text.length}');
+                         print('🔍 _isLoading: $_isLoading');
+                         
+                         if (_isLoading) {
+                           print('⚠️ Botão clicado mas _isLoading é true');
+                           return;
+                         }
+                         
+                         if (_pinController.text.length != 4) {
+                           print('⚠️ PIN inválido, length: ${_pinController.text.length}');
+                           ScaffoldMessenger.of(context).showSnackBar(
+                             const SnackBar(
+                               content: Text('Digite um PIN válido de 4 dígitos'),
+                               backgroundColor: Colors.orange,
+                             ),
+                           );
+                           return;
+                         }
+                         
+                         print('✅ Chamando _connectToAdmin()');
+                         _connectToAdmin();
+                       },
+                       icon: _isLoading ? Icons.hourglass_empty : Icons.link,
+                       width: double.infinity,
+                     ),
+                   ),
                 ] else ...[
                   // Card de Conexão Ativa
                   Container(
@@ -244,36 +371,14 @@ class _ClientScreenState extends State<ClientScreen> {
                                   color: AppTheme.textSecondary,
                                 ),
                               ),
-                            const SizedBox(height: 20),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton(
-                                onPressed: () => _disconnect(),
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: Colors.red.withValues(alpha: 0.7)),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.link_off,
-                                      color: Colors.red.withValues(alpha: 0.7),
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Desconectar',
-                                      style: TextStyle(
-                                        color: Colors.red.withValues(alpha: 0.7),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Apenas o Admin pode desconectar esta conexão',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textSecondary,
+                                fontStyle: FontStyle.italic,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
@@ -282,49 +387,7 @@ class _ClientScreenState extends State<ClientScreen> {
                   ),
                 ],
 
-                // Status das permissões
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _permissionsGranted ? Icons.check_circle : Icons.info,
-                            size: 32,
-                            color: _permissionsGranted ? AppTheme.accentColor : AppTheme.textSecondary,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _permissionsGranted ? AppConstants.permissionsActive : AppConstants.permissionsPending,
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: AppTheme.textPrimary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _permissionsGranted 
-                                      ? AppConstants.permissionsDescription
-                                      : AppConstants.permissionsRequest,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+
               ],
             ),
           ),
@@ -333,47 +396,20 @@ class _ClientScreenState extends State<ClientScreen> {
     );
   }
 
-  // Verifica o status das permissões
-  Future<void> _checkPermissions() async {
-    final granted = await PermissionService.isNotificationPermissionGranted();
-    setState(() {
-      _permissionsGranted = granted;
-    });
-  }
 
-  // Solicita permissões
-  Future<void> _requestPermissions() async {
-    final granted = await PermissionService.requestNotificationPermission();
-    setState(() {
-      _permissionsGranted = granted;
-    });
-
-    if (granted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppConstants.permissionsGranted),
-            backgroundColor: AppTheme.accentColor,
-          ),
-        );
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppConstants.permissionsDenied),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    }
-  }
 
     // Conecta ao admin usando o PIN
   Future<void> _connectToAdmin() async {
+    print('🚀 _connectToAdmin() chamado!');
+    print('🔍 PIN digitado: "${_pinController.text}"');
+    print('🔍 PIN length: ${_pinController.text.length}');
+    
     final pin = _pinController.text.trim();
+    print('🔍 PIN após trim: "$pin"');
+    print('🔍 PIN após trim length: ${pin.length}');
     
     if (pin.length != 4) {
+      print('❌ PIN inválido: $pin (length: ${pin.length})');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Digite um PIN válido de 4 dígitos'),
@@ -385,11 +421,35 @@ class _ClientScreenState extends State<ClientScreen> {
 
     print('🔍 Tentando conectar com PIN: $pin');
     
+    // Garante que o estado seja limpo antes de começar
+    if (_isLoading) {
+      print('⚠️ _isLoading já estava true, resetando...');
+      setState(() {
+        _isLoading = false;
+      });
+      print('🔍 _isLoading após reset: $_isLoading');
+    }
+    
+    print('🔍 _isLoading antes de definir como true: $_isLoading');
     setState(() {
       _isLoading = true;
     });
+    print('✅ _isLoading definido como true');
+    print('🔍 _isLoading após definir como true: $_isLoading');
 
     try {
+      print('🔑 _clientId: $_clientId');
+      if (_clientId == null) {
+        print('❌ _clientId é null!');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro: ID do cliente não foi inicializado'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
       final success = await ConnectionService.establishConnection(
         pin,
         _clientId!,
@@ -435,34 +495,35 @@ class _ClientScreenState extends State<ClientScreen> {
         );
       }
     } finally {
+      print('🔄 Finally executado, resetando _isLoading');
+      print('🔍 _isLoading antes de resetar: $_isLoading');
       setState(() {
         _isLoading = false;
       });
+      print('✅ _isLoading resetado para false');
+      print('🔍 _isLoading após resetar: $_isLoading');
     }
   }
 
-  // Desconecta do admin
-  Future<void> _disconnect() async {
-    // Limpa o estado da conexão
-    await AppStateService.clearActiveConnection();
-    
-    setState(() {
-      _isConnected = false;
-      _activeConnectionId = null;
-      _activeConnectionPin = null;
-      _connectionDate = null;
-    });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Desconectado com sucesso'),
-        backgroundColor: Colors.orange,
-      ),
-    );
-  }
 
   // Formata a data para exibição
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} às ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Limpa o estado da tela
+  void _clearScreenState() {
+    print('🧹 _clearScreenState chamado');
+    print('🔍 _isLoading antes de limpar: $_isLoading');
+    setState(() {
+      _isConnected = false;
+      _activeConnectionPin = null;
+      _connectionDate = null;
+      _isLoading = false;
+    });
+    print('🔍 _isLoading após limpar: $_isLoading');
+    _pinController.clear();
+    print('🧹 Estado da tela limpo');
   }
 }

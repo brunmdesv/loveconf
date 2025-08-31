@@ -38,7 +38,7 @@ class ConnectionService {
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt))); // Ordenação local
   }
 
-  // Busca conexão por PIN
+  // Busca conexão por PIN (apenas aguardando)
   static Future<Connection?> getConnectionByPin(String pin) async {
     try {
       final snapshot = await _firestore
@@ -54,6 +54,39 @@ class ConnectionService {
       return null;
     } catch (e) {
       print('❌ Erro ao buscar conexão por PIN: $e');
+      return null;
+    }
+  }
+
+  // Busca conexão por PIN (qualquer status)
+  static Future<Connection?> getConnectionByPinAnyStatus(String pin) async {
+    try {
+      final snapshot = await _firestore
+          .collection(_collection)
+          .where('pin', isEqualTo: pin)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return Connection.fromFirestore(snapshot.docs.first);
+      }
+      return null;
+    } catch (e) {
+      print('❌ Erro ao buscar conexão por PIN (qualquer status): $e');
+      return null;
+    }
+  }
+
+  // Busca conexão por ID
+  static Future<Connection?> getConnectionById(String connectionId) async {
+    try {
+      final doc = await _firestore.collection(_collection).doc(connectionId).get();
+      if (doc.exists) {
+        return Connection.fromFirestore(doc);
+      }
+      return null;
+    } catch (e) {
+      print('❌ Erro ao buscar conexão por ID: $e');
       return null;
     }
   }
@@ -100,19 +133,42 @@ class ConnectionService {
     }
   }
 
-  // Cancela uma conexão
+  // Cancela ou desconecta uma conexão
   static Future<bool> cancelConnection(String connectionId) async {
     try {
-      await _firestore
-          .collection(_collection)
-          .doc(connectionId)
-          .update({
-            'status': 'cancelled',
-            'cancelledAt': FieldValue.serverTimestamp(),
-          });
+      // Primeiro, busca a conexão para verificar o status atual
+      final doc = await _firestore.collection(_collection).doc(connectionId).get();
+      if (!doc.exists) {
+        print('❌ Conexão $connectionId não encontrada');
+        return false;
+      }
+
+      final data = doc.data() as Map<String, dynamic>;
+      final currentStatus = data['status'] as String;
+
+      if (currentStatus == 'connected') {
+        // Se está conectada, desconecta o cliente
+        await _firestore.collection(_collection).doc(connectionId).update({
+          'status': 'waiting',
+          'clientId': null,
+          'connectedAt': null,
+        });
+        print('✅ Cliente desconectado da conexão $connectionId com sucesso!');
+      } else if (currentStatus == 'waiting') {
+        // Se está aguardando, cancela a conexão
+        await _firestore.collection(_collection).doc(connectionId).update({
+          'status': 'cancelled',
+          'cancelledAt': FieldValue.serverTimestamp(),
+        });
+        print('✅ Conexão $connectionId cancelada com sucesso!');
+      } else {
+        print('❌ Conexão $connectionId já está cancelada');
+        return false;
+      }
+
       return true;
     } catch (e) {
-      print('❌ Erro ao cancelar conexão: $e');
+      print('❌ Erro ao cancelar/desconectar conexão $connectionId: $e');
       return false;
     }
   }

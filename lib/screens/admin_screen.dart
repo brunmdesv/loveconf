@@ -270,23 +270,36 @@ class _AdminScreenState extends State<AdminScreen> {
     try {
       final success = await ConnectionService.cancelConnection(connectionId);
       
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                          content: Text(AppConstants.connectionCancelled),
-            backgroundColor: Colors.orange,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+                        if (mounted) {
+                    if (success) {
+                      // Busca a conexão para verificar o status atual
+                      final connectionDoc = await ConnectionService.getConnectionById(connectionId);
+                      if (connectionDoc != null) {
+                        if (connectionDoc.status == ConnectionStatus.waiting) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(AppConstants.connectionCancelled),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        } else if (connectionDoc.status == ConnectionStatus.connected) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(AppConstants.clientDisconnected),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
                           content: Text(AppConstants.cancelError),
-            backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
