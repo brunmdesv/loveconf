@@ -28,6 +28,12 @@ dependencies:
   geolocator: ^11.0.0
   geocoding: ^3.0.0
   
+  # Informações do dispositivo
+  device_info_plus: ^10.1.0
+  battery_plus: ^5.0.2
+  connectivity_plus: ^5.0.2
+  network_info_plus: ^5.0.2
+  
   # Mapas
   google_maps_flutter: ^2.6.0
   

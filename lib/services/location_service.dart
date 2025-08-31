@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../models/location_record.dart';
 import 'notification_service.dart';
+import 'device_info_service.dart';
 
 class LocationService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -110,6 +111,9 @@ class LocationService {
         print('⚠️ Erro ao obter endereço: $e');
       }
 
+      // Captura informações do dispositivo
+      Map<String, dynamic> deviceInfo = await DeviceInfoService.getDeviceInfo();
+      
       // Cria o registro de localização
       LocationRecord locationRecord = LocationRecord.fromCurrentLocation(
         clientId: clientId,
@@ -118,6 +122,7 @@ class LocationService {
         longitude: position.longitude,
         address: address,
         connectionPin: connectionPin,
+        deviceInfo: deviceInfo,
       );
 
              // Salva no Firestore

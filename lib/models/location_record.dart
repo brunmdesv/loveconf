@@ -11,6 +11,7 @@ class LocationRecord {
   final DateTime timestamp;
   final String? connectionPin;
   final bool isActive;
+  final Map<String, dynamic>? deviceInfo;
 
   LocationRecord({
     required this.id,
@@ -22,6 +23,7 @@ class LocationRecord {
     required this.timestamp,
     this.connectionPin,
     this.isActive = true,
+    this.deviceInfo,
   });
 
   // Converte para Map para salvar no Firestore
@@ -36,6 +38,7 @@ class LocationRecord {
       'timestamp': Timestamp.fromDate(timestamp),
       'connectionPin': connectionPin,
       'isActive': isActive,
+      'deviceInfo': deviceInfo,
     };
   }
 
@@ -51,6 +54,7 @@ class LocationRecord {
       timestamp: (map['timestamp'] as Timestamp).toDate(),
       connectionPin: map['connectionPin'],
       isActive: map['isActive'] ?? true,
+      deviceInfo: map['deviceInfo'] != null ? Map<String, dynamic>.from(map['deviceInfo']) : null,
     );
   }
 
@@ -62,6 +66,7 @@ class LocationRecord {
     required double longitude,
     String? address,
     String? connectionPin,
+    Map<String, dynamic>? deviceInfo,
   }) {
     return LocationRecord(
       id: 'loc_${DateTime.now().millisecondsSinceEpoch}',
@@ -73,6 +78,7 @@ class LocationRecord {
       timestamp: DateTime.now(),
       connectionPin: connectionPin,
       isActive: true,
+      deviceInfo: deviceInfo,
     );
   }
 

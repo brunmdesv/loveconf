@@ -3,6 +3,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../theme/app_theme.dart';
 import '../models/location_record.dart';
+import '../services/device_info_service.dart';
 
 
 class LocationDetailsScreen extends StatefulWidget {
@@ -235,12 +236,18 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
                                   isMonospace: true,
                                 ),
                                 
-                                _buildInfoItem(
-                                  icon: Icons.location_on,
-                                  title: 'Status',
-                                  value: widget.location.isActive ? 'Ativa' : 'Inativa',
-                                  valueColor: widget.location.isActive ? Colors.green : Colors.red,
-                                ),
+                                                                 _buildInfoItem(
+                                   icon: Icons.location_on,
+                                   title: 'Status',
+                                   value: widget.location.isActive ? 'Ativa' : 'Inativa',
+                                   valueColor: widget.location.isActive ? Colors.green : Colors.red,
+                                 ),
+                                 
+                                 // Informações do dispositivo (se disponível)
+                                 if (widget.location.deviceInfo != null) ...[
+                                   const SizedBox(height: 16),
+                                   _buildDeviceInfoSection(),
+                                 ],
                               ],
                             ),
                           ),
@@ -255,6 +262,122 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildDeviceInfoSection() {
+    final deviceInfo = widget.location.deviceInfo!;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header da seção
+        Row(
+          children: [
+            Icon(
+              Icons.phone_android,
+              color: AppTheme.accentColor,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Informações do Dispositivo',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Rede e Conectividade
+        if (deviceInfo['networkName'] != null)
+          _buildInfoItem(
+            icon: Icons.wifi,
+            title: 'Rede',
+            value: deviceInfo['networkName'],
+            valueColor: AppTheme.accentColor,
+          ),
+        
+        if (deviceInfo['wifiName'] != null && deviceInfo['wifiName'] != 'Desconhecido')
+          _buildInfoItem(
+            icon: Icons.router,
+            title: 'Nome WiFi',
+            value: deviceInfo['wifiName'],
+          ),
+        
+        if (deviceInfo['wifiIP'] != null && deviceInfo['wifiIP'] != 'N/A')
+          _buildInfoItem(
+            icon: Icons.language,
+            title: 'IP',
+            value: deviceInfo['wifiIP'],
+            isMonospace: true,
+          ),
+        
+        // Bateria
+        if (deviceInfo['batteryPercentage'] != null)
+          _buildInfoItem(
+            icon: Icons.battery_full,
+            title: 'Bateria',
+            value: deviceInfo['batteryPercentage'],
+            valueColor: _getBatteryColor(deviceInfo['batteryLevel']),
+          ),
+        
+        if (deviceInfo['batteryState'] != null)
+          _buildInfoItem(
+            icon: deviceInfo['isCharging'] == true ? Icons.battery_charging_full : Icons.battery_std,
+            title: 'Status Bateria',
+            value: deviceInfo['batteryState'],
+            valueColor: deviceInfo['isCharging'] == true ? Colors.green : AppTheme.textSecondary,
+          ),
+        
+        // Dispositivo
+        if (deviceInfo['deviceModel'] != null)
+          _buildInfoItem(
+            icon: Icons.phone_android,
+            title: 'Modelo',
+            value: deviceInfo['deviceModel'],
+          ),
+        
+        if (deviceInfo['androidVersion'] != null)
+          _buildInfoItem(
+            icon: Icons.android,
+            title: 'Android',
+            value: deviceInfo['androidVersion'],
+          ),
+        
+        // GPS
+        if (deviceInfo['gpsEnabled'] != null)
+          _buildInfoItem(
+            icon: Icons.gps_fixed,
+            title: 'GPS Ativo',
+            value: deviceInfo['gpsEnabled'] ? 'Sim' : 'Não',
+            valueColor: deviceInfo['gpsEnabled'] ? Colors.green : Colors.red,
+          ),
+        
+        if (deviceInfo['locationPermission'] != null)
+          _buildInfoItem(
+            icon: Icons.security,
+            title: 'Permissão Localização',
+            value: deviceInfo['locationPermission'],
+            valueColor: _getPermissionColor(deviceInfo['locationPermission']),
+          ),
+      ],
+    );
+  }
+
+  Color _getBatteryColor(int? batteryLevel) {
+    if (batteryLevel == null) return AppTheme.textSecondary;
+    if (batteryLevel > 50) return Colors.green;
+    if (batteryLevel > 20) return Colors.orange;
+    return Colors.red;
+  }
+
+  Color _getPermissionColor(String? permission) {
+    if (permission == null) return AppTheme.textSecondary;
+    if (permission.contains('Sempre') || permission.contains('Enquanto Usa')) return Colors.green;
+    if (permission.contains('Negada')) return Colors.red;
+    return Colors.orange;
   }
 
   Widget _buildInfoItem({
