@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/connection.dart';
 import '../theme/app_theme.dart';
+import '../screens/locations_screen.dart';
 
 class ConnectionCard extends StatelessWidget {
   final Connection connection;
@@ -132,9 +133,46 @@ class ConnectionCard extends StatelessWidget {
               ),
             ],
             
-            // Botão de cancelar (para conexões aguardando e conectadas)
-            if (connection.canBeCancelled) ...[
+            // Botões de ação
+            if (connection.canBeCancelled || connection.status == ConnectionStatus.connected) ...[
               const SizedBox(height: 20),
+              
+              // Botão para ver localizações (apenas para conexões conectadas)
+              if (connection.status == ConnectionStatus.connected) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => _navigateToLocations(context, connection.pin),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentColor,
+                      foregroundColor: AppTheme.textPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Ver Localizações',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              
+              // Botão de cancelar/desconectar
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -192,5 +230,17 @@ class ConnectionCard extends StatelessWidget {
       case ConnectionStatus.cancelled:
         return Colors.red;
     }
+  }
+
+  // Navega para a tela de localizações
+  void _navigateToLocations(BuildContext context, String pin) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationsScreen(
+          connectionPin: pin,
+        ),
+      ),
+    );
   }
 }

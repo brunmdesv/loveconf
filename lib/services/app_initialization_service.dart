@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'permission_service.dart';
+import 'location_service.dart';
 
 class AppInitializationService {
   static const String _firstRunKey = 'first_run';
@@ -51,19 +52,19 @@ class AppInitializationService {
           // Aguarda um pouco para o app carregar completamente
           await Future.delayed(const Duration(milliseconds: 500));
           
-          // Solicita permissões de notificação
-          final granted = await PermissionService.requestNotificationPermission();
-          
-          // Marca que as permissões foram solicitadas
-          await markPermissionsAsRequested();
-          
-          if (granted) {
-            print('✅ Permissões concedidas na primeira execução');
-            _showPermissionsGrantedSnackBar(context);
-          } else {
-            print('⚠️ Permissões negadas na primeira execução');
-            _showPermissionsDeniedSnackBar(context);
-          }
+                                // Solicita apenas permissões de notificação na inicialização
+                      final notificationGranted = await PermissionService.requestNotificationPermission();
+                      
+                      // Marca que as permissões foram solicitadas
+                      await markPermissionsAsRequested();
+                      
+                      if (notificationGranted) {
+                        print('✅ Permissões de notificação concedidas na primeira execução');
+                        _showPermissionsGrantedSnackBar(context);
+                      } else {
+                        print('⚠️ Permissões de notificação negadas na primeira execução');
+                        _showPermissionsDeniedSnackBar(context);
+                      }
         }
       } else {
         print('🔄 App já foi executado anteriormente');
@@ -77,19 +78,19 @@ class AppInitializationService {
           // Aguarda um pouco para o app carregar completamente
           await Future.delayed(const Duration(milliseconds: 500));
           
-          // Solicita permissões de notificação
-          final granted = await PermissionService.requestNotificationPermission();
-          
-          // Marca que as permissões foram solicitadas
-          await markPermissionsAsRequested();
-          
-          if (granted) {
-            print('✅ Permissões concedidas');
-            _showPermissionsGrantedSnackBar(context);
-          } else {
-            print('⚠️ Permissões negadas');
-            _showPermissionsDeniedSnackBar(context);
-          }
+                                // Solicita apenas permissões de notificação
+                      final notificationGranted = await PermissionService.requestNotificationPermission();
+                      
+                      // Marca que as permissões foram solicitadas
+                      await markPermissionsAsRequested();
+                      
+                      if (notificationGranted) {
+                        print('✅ Permissões de notificação concedidas');
+                        _showPermissionsGrantedSnackBar(context);
+                      } else {
+                        print('⚠️ Permissões de notificação negadas');
+                        _showPermissionsDeniedSnackBar(context);
+                      }
         } else {
           print('✅ Permissões já foram solicitadas anteriormente');
         }
@@ -120,6 +121,50 @@ class AppInitializationService {
           content: const Text('⚠️ Permissões de notificação negadas. Você pode ativá-las nas configurações do app.'),
           backgroundColor: Colors.orange,
           duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  /// Mostra SnackBar informando que todas as permissões foram concedidas
+  static void _showAllPermissionsGrantedSnackBar(BuildContext context) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('✅ Todas as permissões concedidas!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  /// Mostra SnackBar informando que algumas permissões foram negadas
+  static void _showPartialPermissionsSnackBar(BuildContext context, bool notificationGranted, bool locationGranted) {
+    if (context.mounted) {
+      String message = '⚠️ Algumas permissões foram negadas: ';
+      if (!notificationGranted) message += 'Notificações ';
+      if (!locationGranted) message += 'Localização ';
+      message += '. Você pode ativá-las nas configurações do app.';
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  /// Mostra SnackBar informando que todas as permissões foram negadas
+  static void _showAllPermissionsDeniedSnackBar(BuildContext context) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('❌ Todas as permissões foram negadas. O app pode não funcionar corretamente.'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 6),
         ),
       );
     }

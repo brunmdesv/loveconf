@@ -54,7 +54,30 @@ class FirebaseConfig {
           await doc.reference.delete();
         }
         
-        print('✅ Coleções do Firestore criadas com sucesso!');
+        print('✅ Coleção connections criada com sucesso!');
+      }
+
+      // Verifica se a coleção locations existe
+      final locationsSnapshot = await firestore.collection('locations').limit(1).get();
+      
+      if (locationsSnapshot.docs.isEmpty) {
+        // Cria um documento de exemplo para inicializar a coleção
+        await firestore.collection('locations').add({
+          'createdAt': FieldValue.serverTimestamp(),
+          'status': 'example',
+          'latitude': 0.0,
+          'longitude': 0.0,
+          'adminId': 'system',
+          'clientId': 'system',
+        });
+        
+        // Remove o documento de exemplo
+        final exampleDocs = await firestore.collection('locations').where('status', isEqualTo: 'example').get();
+        for (var doc in exampleDocs.docs) {
+          await doc.reference.delete();
+        }
+        
+        print('✅ Coleção locations criada com sucesso!');
       }
       
       // Tenta criar o índice necessário (pode falhar se já existir)

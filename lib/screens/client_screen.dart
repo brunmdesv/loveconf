@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../utils/app_constants.dart';
 import '../services/connection_service.dart';
 import '../services/app_state_service.dart';
+import '../services/location_service.dart';
 import '../models/connection.dart';
 import '../widgets/gradient_button.dart';
 
@@ -241,57 +242,68 @@ class _ClientScreenState extends State<ClientScreen> {
 
 
 
-                // Campo de PIN ou Card de Conexão Ativa
-                if (!_isConnected) ...[
-                  // Campo de PIN
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 24),
-                    child: TextField(
-                      controller: _pinController,
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLength: 4,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Digite o PIN de 4 dígitos',
-                        labelStyle: const TextStyle(
-                          color: AppTheme.textSecondary,
-                        ),
-                        hintText: '0000',
-                        hintStyle: TextStyle(
-                          color: AppTheme.textSecondary.withValues(alpha: 0.5),
-                        ),
-                        counterText: '',
-                        filled: true,
-                        fillColor: AppTheme.surfaceColor,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AppTheme.accentColor,
-                            width: 2,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: AppTheme.accentColor.withValues(alpha: 0.3),
-                            width: 2,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AppTheme.accentColor,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                                 // Campo de PIN ou Card de Conexão Ativa
+                 if (!_isConnected) ...[
+                   // Botão de Permissões
+                   Padding(
+                     padding: const EdgeInsets.only(bottom: 24),
+                     child: GradientButton(
+                       text: 'Ativar Permissões',
+                       onPressed: () => _requestPermissions(),
+                       icon: Icons.location_on,
+                       width: double.infinity,
+                     ),
+                   ),
+                   
+                   // Campo de PIN
+                   Container(
+                     margin: const EdgeInsets.only(bottom: 24),
+                     child: TextField(
+                       controller: _pinController,
+                       style: const TextStyle(
+                         color: AppTheme.textPrimary,
+                         fontSize: 18,
+                         fontWeight: FontWeight.w600,
+                       ),
+                       textAlign: TextAlign.center,
+                       maxLength: 4,
+                       keyboardType: TextInputType.number,
+                       decoration: InputDecoration(
+                         labelText: 'Digite o PIN de 4 dígitos',
+                         labelStyle: const TextStyle(
+                           color: AppTheme.textSecondary,
+                         ),
+                         hintText: '0000',
+                         hintStyle: TextStyle(
+                           color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                         ),
+                         counterText: '',
+                         filled: true,
+                         fillColor: AppTheme.surfaceColor,
+                         border: OutlineInputBorder(
+                           borderRadius: BorderRadius.circular(12),
+                           borderSide: const BorderSide(
+                             color: AppTheme.accentColor,
+                             width: 2,
+                           ),
+                         ),
+                         enabledBorder: OutlineInputBorder(
+                           borderRadius: BorderRadius.circular(12),
+                           borderSide: BorderSide(
+                             color: AppTheme.accentColor.withValues(alpha: 0.3),
+                             width: 2,
+                           ),
+                         ),
+                         focusedBorder: OutlineInputBorder(
+                           borderRadius: BorderRadius.circular(12),
+                           borderSide: const BorderSide(
+                             color: AppTheme.accentColor,
+                             width: 2,
+                           ),
+                         ),
+                       ),
+                     ),
+                   ),
 
                                      // Botão Conectar
                    Padding(
@@ -328,63 +340,63 @@ class _ClientScreenState extends State<ClientScreen> {
                      ),
                    ),
                 ] else ...[
-                  // Card de Conexão Ativa
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 24),
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.check_circle,
-                                  color: AppTheme.accentColor,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Conexão Ativa',
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    color: AppTheme.accentColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'PIN: $_activeConnectionPin',
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: AppTheme.textPrimary,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            if (_connectionDate != null)
-                              Text(
-                                'Conectado em: ${_formatDate(_connectionDate!)}',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Apenas o Admin pode desconectar esta conexão',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.textSecondary,
-                                fontStyle: FontStyle.italic,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                                     // Card de Conexão Ativa
+                   Container(
+                     margin: const EdgeInsets.only(bottom: 24),
+                     child: Card(
+                       child: Padding(
+                         padding: const EdgeInsets.all(20.0),
+                         child: Column(
+                           children: [
+                             Row(
+                               mainAxisAlignment: MainAxisAlignment.center,
+                               children: [
+                                 Icon(
+                                   Icons.check_circle,
+                                   color: AppTheme.accentColor,
+                                   size: 24,
+                                 ),
+                                 const SizedBox(width: 8),
+                                 Text(
+                                   'Conexão Ativa',
+                                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                     color: AppTheme.accentColor,
+                                     fontWeight: FontWeight.bold,
+                                   ),
+                                 ),
+                               ],
+                             ),
+                             const SizedBox(height: 16),
+                             Text(
+                               'PIN: $_activeConnectionPin',
+                               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                 color: AppTheme.textPrimary,
+                                 fontWeight: FontWeight.w600,
+                                 letterSpacing: 2,
+                               ),
+                             ),
+                             const SizedBox(height: 8),
+                             if (_connectionDate != null)
+                               Text(
+                                 'Conectado em: ${_formatDate(_connectionDate!)}',
+                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                   color: AppTheme.textSecondary,
+                                 ),
+                               ),
+                             const SizedBox(height: 16),
+                             Text(
+                               'Apenas o Admin pode desconectar esta conexão',
+                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                 color: AppTheme.textSecondary,
+                                 fontStyle: FontStyle.italic,
+                               ),
+                               textAlign: TextAlign.center,
+                             ),
+                           ],
+                         ),
+                       ),
+                     ),
+                   ),
                 ],
 
 
@@ -526,4 +538,41 @@ class _ClientScreenState extends State<ClientScreen> {
     _pinController.clear();
     print('🧹 Estado da tela limpo');
   }
+
+  // Solicita permissões de localização
+  Future<void> _requestPermissions() async {
+    print('🔐 Solicitando permissões de localização...');
+    
+    try {
+      final granted = await LocationService.requestLocationPermission();
+      
+      if (granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Permissões de localização concedidas!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        print('✅ Permissões de localização concedidas');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Permissões de localização negadas'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        print('⚠️ Permissões de localização negadas');
+      }
+    } catch (e) {
+      print('❌ Erro ao solicitar permissões: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Erro ao solicitar permissões: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+
 }
