@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "213232837662",
+    "project_id": "loveconf-b140d",
+    "storage_bucket": "loveconf-b140d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:213232837662:android:bf0527d6b220c076c0fa0f",
+        "android_client_info": {
+          "package_name": "com.tsnowk.loveconf"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA--kCwhqEzz9afDyCcmE3uqy91uhdF04c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

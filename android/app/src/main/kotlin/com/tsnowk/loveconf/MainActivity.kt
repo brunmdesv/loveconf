@@ -1,4 +1,4 @@
-package com.example.loveconf
+package com.tsnowk.loveconf
 
 import io.flutter.embedding.android.FlutterActivity
 
