@@ -5,6 +5,7 @@ import 'utils/app_constants.dart';
 import 'utils/firebase_config.dart';
 import 'services/app_state_service.dart';
 import 'services/app_initialization_service.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,9 @@ void main() async {
   
   // Inicializa o serviço de estado da aplicação
   await AppStateService.initialize();
+  
+  // Inicializa o serviço de notificações
+  await NotificationService.initialize();
   
   runApp(const LoveConfApp());
 }

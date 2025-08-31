@@ -7,7 +7,6 @@ import '../services/app_state_service.dart';
 import '../widgets/connection_card.dart';
 import '../widgets/pin_dialog.dart';
 import '../widgets/gradient_button.dart';
-import 'locations_screen.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});

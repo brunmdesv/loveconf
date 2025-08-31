@@ -27,6 +27,17 @@ dependencies:
   # Localização
   geolocator: ^11.0.0
   geocoding: ^3.0.0
+  
+  # Mapas
+  google_maps_flutter: ^2.6.0
+  
+  # Notificações Push
+  firebase_messaging: ^15.2.10
+  flutter_local_notifications: ^17.2.2
+  
+  # Exportação
+  path_provider: ^2.1.3
+  share_plus: ^7.2.2
 
 dev_dependencies:
   flutter_test:

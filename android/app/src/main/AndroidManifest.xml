@@ -13,12 +13,17 @@
     
     <!-- Permissões de Foreground Service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    
-    <application
-        android:label="loveconf"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+                    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+                
+                <application
+                    android:label="loveconf"
+                    android:name="${applicationName}"
+                    android:icon="@mipmap/ic_launcher">
+                    
+                                         <!-- Chave da API do Google Maps -->
+                     <meta-data
+                         android:name="com.google.android.geo.API_KEY"
+                         android:value="AIzaSyBjV9_hJiL09oXSR_9N2bq5wyHl8lt2d14" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

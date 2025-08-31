@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../models/location_record.dart';
+import 'notification_service.dart';
 
 class LocationService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -119,11 +120,14 @@ class LocationService {
         connectionPin: connectionPin,
       );
 
-      // Salva no Firestore
-      await saveLocationRecord(locationRecord);
-      
-      print('✅ Localização salva com sucesso');
-      return locationRecord;
+             // Salva no Firestore
+       await saveLocationRecord(locationRecord);
+       
+       // Notifica sobre a nova localização
+       await NotificationService.notifyNewLocation(locationRecord);
+       
+       print('✅ Localização salva com sucesso');
+       return locationRecord;
     } catch (e) {
       print('❌ Erro ao capturar localização: $e');
       return null;
@@ -214,11 +218,34 @@ class LocationService {
           .map((doc) => LocationRecord.fromMap(doc.data() as Map<String, dynamic>))
           .toList();
 
+      // Ordena por timestamp mais recente primeiro
+      locations.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
       print('✅ ${locations.length} localizações encontradas para PIN $pin');
       return locations;
     } catch (e) {
       print('❌ Erro ao buscar localizações por PIN: $e');
-      return [];
+      // Em caso de erro de índice, tenta buscar sem ordenação
+      try {
+        QuerySnapshot snapshot = await _firestore
+            .collection(_collectionName)
+            .where('connectionPin', isEqualTo: pin)
+            .where('isActive', isEqualTo: true)
+            .get();
+
+        List<LocationRecord> locations = snapshot.docs
+            .map((doc) => LocationRecord.fromMap(doc.data() as Map<String, dynamic>))
+            .toList();
+
+        // Ordena localmente
+        locations.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+        print('✅ ${locations.length} localizações encontradas para PIN $pin (sem ordenação do Firestore)');
+        return locations;
+      } catch (e2) {
+        print('❌ Erro ao buscar localizações sem ordenação: $e2');
+        return [];
+      }
     }
   }
 
