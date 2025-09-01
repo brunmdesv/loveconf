@@ -26,12 +26,8 @@ class _LocationsScreenState extends State<LocationsScreen> {
   bool _isLoading = false;
   bool _hasLocationPermission = false;
   List<LocationRecord> _locations = [];
-  List<LocationRecord> _filteredLocations = [];
   String? _clientId;
   String? _currentAdminId;
-  
-  // Filtros
-  String _selectedFilter = 'todas'; // todas, hoje, semana, mes
 
   @override
   void initState() {
@@ -112,7 +108,6 @@ class _LocationsScreenState extends State<LocationsScreen> {
       
       setState(() {
         _locations = locations;
-        _filteredLocations = locations;
         _isLoading = false;
       });
       
@@ -155,7 +150,6 @@ class _LocationsScreenState extends State<LocationsScreen> {
         // Adiciona a nova localização à lista
         setState(() {
           _locations.insert(0, locationRecord);
-          _updateFilteredLocations();
           _isLoading = false;
         });
 
@@ -207,6 +201,14 @@ class _LocationsScreenState extends State<LocationsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          if (_locations.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.file_download),
+              onPressed: () => _showExportOptions(),
+              tooltip: 'Exportar Histórico',
+            ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -229,62 +231,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 12),
 
-                // Filtros de data
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Filtrar por período:',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: AppTheme.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildFilterChip('todas', 'Todas'),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildFilterChip('hoje', 'Hoje'),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildFilterChip('semana', 'Esta Semana'),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildFilterChip('mes', 'Este Mês'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Botão de Exportar
-                if (_filteredLocations.isNotEmpty)
-                  SizedBox(
-                    width: double.infinity,
-                    child: GradientButton(
-                      text: '📤 Exportar Histórico',
-                      onPressed: () => _showExportOptions(),
-                      icon: Icons.file_download,
-                      isOutlined: true,
-                    ),
-                  ),
 
                 const SizedBox(height: 16),
 
@@ -341,9 +288,9 @@ class _LocationsScreenState extends State<LocationsScreen> {
 
   Widget _buildLocationsList() {
     return ListView.builder(
-      itemCount: _filteredLocations.length,
+      itemCount: _locations.length,
       itemBuilder: (context, index) {
-        final location = _filteredLocations[index];
+        final location = _locations[index];
         return _buildLocationCard(location);
       },
     );
@@ -522,85 +469,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
     );
   }
 
-  // Constrói um chip de filtro
-  Widget _buildFilterChip(String value, String label) {
-    final isSelected = _selectedFilter == value;
-    
-    return GestureDetector(
-      onTap: () => _applyFilter(value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? AppTheme.accentColor 
-              : AppTheme.surfaceColor.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected 
-                ? AppTheme.accentColor 
-                : AppTheme.textSecondary.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: isSelected 
-                ? AppTheme.textPrimary 
-                : AppTheme.textSecondary,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
 
-  // Aplica o filtro selecionado
-  void _applyFilter(String filter) {
-    setState(() {
-      _selectedFilter = filter;
-      _filteredLocations = _filterLocationsByPeriod(filter);
-    });
-  }
-
-  // Filtra localizações por período
-  List<LocationRecord> _filterLocationsByPeriod(String filter) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    
-    switch (filter) {
-      case 'hoje':
-        return _locations.where((location) {
-          final locationDate = DateTime(
-            location.timestamp.year,
-            location.timestamp.month,
-            location.timestamp.day,
-          );
-          return locationDate.isAtSameMomentAs(today);
-        }).toList();
-        
-      case 'semana':
-        final weekAgo = today.subtract(const Duration(days: 7));
-        return _locations.where((location) {
-          return location.timestamp.isAfter(weekAgo);
-        }).toList();
-        
-      case 'mes':
-        final monthAgo = DateTime(now.year, now.month - 1, now.day);
-        return _locations.where((location) {
-          return location.timestamp.isAfter(monthAgo);
-        }).toList();
-        
-      default: // 'todas'
-        return _locations;
-    }
-  }
-
-  // Atualiza a lista filtrada quando as localizações mudam
-  void _updateFilteredLocations() {
-    _filteredLocations = _filterLocationsByPeriod(_selectedFilter);
-  }
 
   // Mostra opções de exportação
   void _showExportOptions() {
@@ -634,9 +503,9 @@ class _LocationsScreenState extends State<LocationsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem('Total', '${_filteredLocations.length}'),
-                  _buildStatItem('Hoje', '${ExportService.generateStats(_filteredLocations)['today']}'),
-                  _buildStatItem('Esta Semana', '${ExportService.generateStats(_filteredLocations)['thisWeek']}'),
+                  _buildStatItem('Total', '${_locations.length}'),
+                  _buildStatItem('Hoje', '${ExportService.generateStats(_locations)['today']}'),
+                  _buildStatItem('Esta Semana', '${ExportService.generateStats(_locations)['thisWeek']}'),
                 ],
               ),
             ),
@@ -741,13 +610,13 @@ class _LocationsScreenState extends State<LocationsScreen> {
       // Exporta baseado no formato
       switch (format) {
         case 'csv':
-          await ExportService.exportAndShareCSV(_filteredLocations);
+          await ExportService.exportAndShareCSV(_locations);
           break;
         case 'json':
-          await ExportService.exportAndShareJSON(_filteredLocations);
+          await ExportService.exportAndShareJSON(_locations);
           break;
         case 'txt':
-          await ExportService.exportAndShareText(_filteredLocations);
+          await ExportService.exportAndShareText(_locations);
           break;
       }
 
