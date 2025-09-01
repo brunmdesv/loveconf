@@ -209,32 +209,7 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
                                   value: widget.location.fullTimestamp,
                                 ),
                                 
-                                _buildInfoItem(
-                                  icon: Icons.schedule,
-                                  title: 'Tempo Relativo',
-                                  value: widget.location.formattedTimestamp,
-                                ),
-                                
-                                if (widget.location.connectionPin != null)
-                                  _buildInfoItem(
-                                    icon: Icons.link,
-                                    title: 'PIN da Conexão',
-                                    value: widget.location.connectionPin!,
-                                  ),
-                                
-                                _buildInfoItem(
-                                  icon: Icons.person,
-                                  title: 'ID do Cliente',
-                                  value: widget.location.clientId,
-                                  isMonospace: true,
-                                ),
-                                
-                                _buildInfoItem(
-                                  icon: Icons.admin_panel_settings,
-                                  title: 'ID do Admin',
-                                  value: widget.location.adminId,
-                                  isMonospace: true,
-                                ),
+
                                 
                                                                  _buildInfoItem(
                                    icon: Icons.location_on,

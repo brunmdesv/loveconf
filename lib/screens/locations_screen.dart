@@ -214,52 +214,10 @@ class _LocationsScreenState extends State<LocationsScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Header
-                Container(
-                  margin: const EdgeInsets.only(bottom: 24),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentColor.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppTheme.accentColor.withValues(alpha: 0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.location_on,
-                          size: 40,
-                          color: AppTheme.accentColor,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Histórico de Localizações',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: AppTheme.textPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Visualize e capture localizações em tempo real',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppTheme.textSecondary,
-                          fontSize: 16,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
+
 
                 // Botão Capturar Localização
                 SizedBox(
@@ -271,7 +229,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Filtros de data
                 Container(
@@ -314,7 +272,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Botão de Exportar
                 if (_filteredLocations.isNotEmpty)
@@ -328,7 +286,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
                     ),
                   ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 // Lista de localizações
                 Expanded(
@@ -393,12 +351,12 @@ class _LocationsScreenState extends State<LocationsScreen> {
 
   Widget _buildLocationCard(LocationRecord location) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
         onTap: () => _navigateToLocationDetails(location),
         child: Card(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -450,7 +408,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Coordenadas
                 Container(
@@ -524,29 +482,10 @@ class _LocationsScreenState extends State<LocationsScreen> {
                   ],
                 ),
 
-                // PIN da conexão (se disponível)
-                if (location.connectionPin != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.link,
-                        color: AppTheme.textSecondary,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'PIN: ${location.connectionPin}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+
 
                 // Indicador de toque
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
